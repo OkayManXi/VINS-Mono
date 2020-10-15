@@ -1,0 +1,10 @@
+<launch>
+    <arg name="config_path" default = "$(find larvio_feature_tracker)/../config/euroc/euroc_config.yaml" />
+	  <arg name="vins_path" default = "$(find larvio_feature_tracker)/../config/../" />
+    
+    <node name="larvio_feature_tracker" pkg="larvio_feature_tracker" type="larvio_feature_tracker" output="log">
+        <param name="config_file" type="string" value="$(arg config_path)" />
+        <param name="vins_folder" type="string" value="$(arg vins_path)" />
+    </node>
+
+</launch>

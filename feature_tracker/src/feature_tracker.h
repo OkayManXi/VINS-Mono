@@ -49,11 +49,14 @@ class FeatureTracker
     cv::Mat mask;
     cv::Mat fisheye_mask;
     cv::Mat prev_img, cur_img, forw_img;
+    //新检测到的特征点
     vector<cv::Point2f> n_pts;
     vector<cv::Point2f> prev_pts, cur_pts, forw_pts;
     vector<cv::Point2f> prev_un_pts, cur_un_pts;
     vector<cv::Point2f> pts_velocity;
+    //特征点id
     vector<int> ids;
+    //特征点生命周期
     vector<int> track_cnt;
     map<int, cv::Point2f> cur_un_pts_map;
     map<int, cv::Point2f> prev_un_pts_map;

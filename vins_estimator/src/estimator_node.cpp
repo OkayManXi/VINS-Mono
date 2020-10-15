@@ -163,7 +163,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr &imu_msg)
 
 
 void feature_callback(const sensor_msgs::PointCloudConstPtr &feature_msg)
-{
+{    
+    ROS_WARN("1111");
     if (!init_feature)
     {
         //skip the first detected feature, which doesn't contain optical flow speed
@@ -343,6 +344,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "vins_estimator");
     ros::NodeHandle n("~");
     ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
+    ROS_WARN("1111");
     readParameters(n);
     estimator.setParameter();
 #ifdef EIGEN_DONT_PARALLELIZE

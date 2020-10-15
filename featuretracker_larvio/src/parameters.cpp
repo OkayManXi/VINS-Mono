@@ -18,10 +18,15 @@ int FOCAL_LENGTH;
 int FISHEYE;
 bool PUB_THIS_FRAME;
 
+cv::Matx33d R_cam_imu;
+cv::Vec4d cam_intrinsics;
+cv::Vec4d cam_distortion;
+int pyr_levels;
+
 //读launch文件
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
-{
+{   
     T ans;
     if (n.getParam(name, ans))
     {
@@ -66,10 +71,26 @@ void readParameters(ros::NodeHandle &n)
     FOCAL_LENGTH = 460;
     PUB_THIS_FRAME = false;
 
+    cv::FileNode x = fsSettings["projection_parameters"];
+    cam_intrinsics(0) = static_cast<double>(x["fx"]);
+    cam_intrinsics(1) = static_cast<double>(x["fy"]);
+    cam_intrinsics(2) = static_cast<double>(x["cx"]);
+    cam_intrinsics(3) = static_cast<double>(x["cy"]);
+
+    x = fsSettings["distortion_parameters"];
+    cam_distortion(0) = static_cast<double>(x["k1"]);
+    cam_distortion(1) = static_cast<double>(x["k2"]);
+    cam_distortion(2) = static_cast<double>(x["p1"]);
+    cam_distortion(3) = static_cast<double>(x["p1"]);
+
+    x = fsSettings["extrinsicRotation"];
+    R_cam_imu = static_cast<cv::Matx33d>(x["data"]);
+
+    pyr_levels = 3;
+
+    
     if (FREQ == 0)
         FREQ = 100;
 
     fsSettings.release();
-
-
 }

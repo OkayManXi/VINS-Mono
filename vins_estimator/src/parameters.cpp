@@ -132,6 +132,5 @@ void readParameters(ros::NodeHandle &n)
     {
         TR = 0;
     }
-    
     fsSettings.release();
 }

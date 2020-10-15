@@ -10,7 +10,7 @@ bool inBorder(const cv::Point2f &pt)
     int img_y = cvRound(pt.y);
     return BORDER_SIZE <= img_x && img_x < COL - BORDER_SIZE && BORDER_SIZE <= img_y && img_y < ROW - BORDER_SIZE;
 }
-
+//特征点坐标vector筛选
 void reduceVector(vector<cv::Point2f> &v, vector<uchar> status)
 {
     int j = 0;
@@ -19,7 +19,7 @@ void reduceVector(vector<cv::Point2f> &v, vector<uchar> status)
             v[j++] = v[i];
     v.resize(j);
 }
-
+//特征点id vector筛选
 void reduceVector(vector<int> &v, vector<uchar> status)
 {
     int j = 0;
@@ -43,27 +43,30 @@ void FeatureTracker::setMask()
     
 
     // prefer to keep features that are tracked for long time
+    //应该是life、坐标、ids
     vector<pair<int, pair<cv::Point2f, int>>> cnt_pts_id;
 
     for (unsigned int i = 0; i < forw_pts.size(); i++)
         cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], ids[i])));
-
+    //排序vec起点、终点和lambda匿名函数（返回bool）
     sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, int>> &a, const pair<int, pair<cv::Point2f, int>> &b)
          {
             return a.first > b.first;
          });
-
+    //为了后面排序重新组织vec，暂时清空vec
     forw_pts.clear();
     ids.clear();
     track_cnt.clear();
 
     for (auto &it : cnt_pts_id)
-    {
+    {   
+        //未mask的特征点坐标的mask像素值为255（白色），mask后画个黑圈像素值标记为0
         if (mask.at<uchar>(it.second.first) == 255)
         {
             forw_pts.push_back(it.second.first);
             ids.push_back(it.second.second);
             track_cnt.push_back(it.first);
+            //更新mask，0为圆线条的宽度，-1代表画实心圆
             cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
         }
     }
@@ -87,9 +90,11 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
     if (EQUALIZE)
     {
+        //直方图均衡化
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         TicToc t_c;
         clahe->apply(_img, img);
+        //均衡化消耗时间
         ROS_DEBUG("CLAHE costs: %fms", t_c.toc());
     }
     else
@@ -107,7 +112,8 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     forw_pts.clear();
 
     if (cur_pts.size() > 0)
-    {
+    {   
+        //光流追踪耗时
         TicToc t_o;
         vector<uchar> status;
         vector<float> err;
@@ -124,19 +130,22 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         reduceVector(track_cnt, status);
         ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
     }
-
+    //将未追踪上的特征点去除后，将所有点的生命周期+1
     for (auto &n : track_cnt)
         n++;
 
     if (PUB_THIS_FRAME)
-    {
+    {   
+        //如果要发布，需要进行ransac筛点
         rejectWithF();
         ROS_DEBUG("set mask begins");
         TicToc t_m;
+        //根据生命周期去除邻近点筛点
         setMask();
         ROS_DEBUG("set mask costs %fms", t_m.toc());
 
         ROS_DEBUG("detect feature begins");
+        //检测新的角点
         TicToc t_t;
         int n_max_cnt = MAX_CNT - static_cast<int>(forw_pts.size());
         if (n_max_cnt > 0)
@@ -147,6 +156,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
                 cout << "mask type wrong " << endl;
             if (mask.size() != forw_img.size())
                 cout << "wrong size " << endl;
+            //局内点筛完后，新增新的特征点
             cv::goodFeaturesToTrack(forw_img, n_pts, MAX_CNT - forw_pts.size(), 0.01, MIN_DIST, mask);
         }
         else
@@ -170,7 +180,8 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 void FeatureTracker::rejectWithF()
 {
     if (forw_pts.size() >= 8)
-    {
+    {   
+        //ransac筛点
         ROS_DEBUG("FM ransac begins");
         TicToc t_f;
         vector<cv::Point2f> un_cur_pts(cur_pts.size()), un_forw_pts(forw_pts.size());
@@ -203,7 +214,7 @@ void FeatureTracker::rejectWithF()
 }
 
 bool FeatureTracker::updateID(unsigned int i)
-{
+{   //新角点的id为-1，如果下一帧追踪上了，就给他一个id
     if (i < ids.size())
     {
         if (ids[i] == -1)

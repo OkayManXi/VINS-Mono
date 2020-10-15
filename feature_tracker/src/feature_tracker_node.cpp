@@ -43,6 +43,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         pub_count = 1;
         std_msgs::Bool restart_flag;
         restart_flag.data = true;
+        //重启publish
         pub_restart.publish(restart_flag);
         return;
     }
@@ -162,8 +163,10 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             init_pub = 1;
         }
         else
+            {
+            //ros publisher
             pub_img.publish(feature_points);
-
+            }
         if (SHOW_TRACK)
         {
             ptr = cv_bridge::cvtColor(ptr, sensor_msgs::image_encodings::BGR8);
@@ -210,6 +213,8 @@ int main(int argc, char **argv)
     ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
     readParameters(n);
 
+    ROS_WARN("2222");
+    
     for (int i = 0; i < NUM_OF_CAM; i++)
         trackerData[i].readIntrinsicParameter(CAM_NAMES[i]);
 
