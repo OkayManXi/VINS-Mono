@@ -23,4 +23,13 @@ extern int EQUALIZE;
 extern int FISHEYE;
 extern bool PUB_THIS_FRAME;
 
+extern cv::Matx33d R_cam_imu;
+extern cv::Vec4d cam_intrinsics;
+extern cv::Vec4d cam_distortion;
+extern int PYR_LEVELS;
+extern int PATCH_SIZE;
+extern int MAX_ITERATION;
+extern int TRACK_PRECISION;
+extern int SHOW_FEATURE_TRACK;
+
 void readParameters(ros::NodeHandle &n);

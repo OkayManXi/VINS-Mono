@@ -18,6 +18,15 @@ int FOCAL_LENGTH;
 int FISHEYE;
 bool PUB_THIS_FRAME;
 
+cv::Matx33d R_cam_imu;
+cv::Vec4d cam_intrinsics;
+cv::Vec4d cam_distortion;
+int PYR_LEVELS;
+int PATCH_SIZE;
+int MAX_ITERATION;
+int TRACK_PRECISION;
+int SHOW_FEATURE_TRACK;
+
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
 {
@@ -65,6 +74,29 @@ void readParameters(ros::NodeHandle &n)
     FOCAL_LENGTH = 460;
     PUB_THIS_FRAME = false;
 
+    //新增的参数
+    cv::FileNode x = fsSettings["projection_parameters"];
+    cam_intrinsics(0) = static_cast<double>(x["fx"]);
+    cam_intrinsics(1) = static_cast<double>(x["fy"]);
+    cam_intrinsics(2) = static_cast<double>(x["cx"]);
+    cam_intrinsics(3) = static_cast<double>(x["cy"]);
+
+    x = fsSettings["distortion_parameters"];
+    cam_distortion(0) = static_cast<double>(x["k1"]);
+    cam_distortion(1) = static_cast<double>(x["k2"]);
+    cam_distortion(2) = static_cast<double>(x["p1"]);
+    cam_distortion(3) = static_cast<double>(x["p1"]);
+
+    cv::Mat temp;
+    //cv::Matx33d R_imu_cam;
+    fsSettings["extrinsicRotation"] >> temp;
+    R_cam_imu = temp;
+
+    PYR_LEVELS = fsSettings["pyr_levels"];
+    PATCH_SIZE = fsSettings["patch_size"];
+    MAX_ITERATION = fsSettings["max_iteration"];
+    TRACK_PRECISION = fsSettings["track_precision"];
+    SHOW_FEATURE_TRACK = fsSettings["show_feature_track"];
     if (FREQ == 0)
         FREQ = 100;
 

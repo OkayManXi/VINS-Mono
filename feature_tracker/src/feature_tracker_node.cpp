@@ -25,8 +25,18 @@ bool first_image_flag = true;
 double last_image_time = 0;
 bool init_pub = 0;
 
+void imucallback(const sensor_msgs::ImuConstPtr &imu_msg)
+{
+    trackerData[0].imu_msg_buffer.push_back(ImuData(imu_msg->header.stamp.toSec(), 
+        imu_msg->angular_velocity.x, imu_msg->angular_velocity.y, imu_msg->angular_velocity.z, 
+        imu_msg->linear_acceleration.x, imu_msg->linear_acceleration.y, imu_msg->linear_acceleration.z));
+
+
+}
+
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
+
     if(first_image_flag)
     {
         first_image_flag = false;
@@ -130,8 +140,10 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             auto &cur_pts = trackerData[i].cur_pts;
             auto &ids = trackerData[i].ids;
             auto &pts_velocity = trackerData[i].pts_velocity;
+            std::cerr <<"feature track num:"<< ids.size() << std::endl;
             for (unsigned int j = 0; j < ids.size(); j++)
             {
+
                 if (trackerData[i].track_cnt[j] > 1)
                 {
                     int p_id = ids[j];
@@ -162,8 +174,10 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             init_pub = 1;
         }
         else
+        {
+            //std::cerr << feature_points->channels.size() << std::endl;
             pub_img.publish(feature_points);
-
+        }
         if (SHOW_TRACK)
         {
             ptr = cv_bridge::cvtColor(ptr, sensor_msgs::image_encodings::BGR8);
@@ -201,6 +215,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         }
     }
     ROS_INFO("whole feature tracker processing costs: %f", t_r.toc());
+
 }
 
 int main(int argc, char **argv)
@@ -227,7 +242,7 @@ int main(int argc, char **argv)
                 ROS_INFO("load mask success");
         }
     }
-
+    ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 5000, imucallback);
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
 
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
