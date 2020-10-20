@@ -31,5 +31,6 @@ extern int PATCH_SIZE;
 extern int MAX_ITERATION;
 extern int TRACK_PRECISION;
 extern int SHOW_FEATURE_TRACK;
+extern std::string DATASET_NAME;
 
 void readParameters(ros::NodeHandle &n);

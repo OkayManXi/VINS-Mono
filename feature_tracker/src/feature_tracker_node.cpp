@@ -140,7 +140,8 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             auto &cur_pts = trackerData[i].cur_pts;
             auto &ids = trackerData[i].ids;
             auto &pts_velocity = trackerData[i].pts_velocity;
-            std::cerr <<"feature track num:"<< ids.size() << std::endl;
+            //if (SHOW_FEATURE_TRACK)
+                //std::cerr <<"feature track num:"<< ids.size() << std::endl;
             for (unsigned int j = 0; j < ids.size(); j++)
             {
 

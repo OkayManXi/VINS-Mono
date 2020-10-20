@@ -115,7 +115,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     cv::Mat img;
     TicToc t_r;
     cur_time = _cur_time;
-    //std::cerr << countdebug++ << std::endl;
+    //std::cerr << "Read new image" << std::endl;
     if (EQUALIZE)
     {
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
@@ -288,7 +288,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
         if(SHOW_FEATURE_TRACK)
         {
-            std::ofstream outfile(("/home/zty/myGit/VINS-Mono/src/VINS-Mono/results/feature track.txt"),std::ios::app);
+            std::ofstream outfile(("/home/zty/myGit/VINS-Mono/src/VINS-Mono/results/"+DATASET_NAME+".txt"),std::ios::app);
             outfile <<std::fixed<< std::setprecision(13) 
                 << cur_time <<" "
                 << before_tracking <<" "
@@ -309,7 +309,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     if (PUB_THIS_FRAME)
     {
         countdebug = 1;
-        //std::cerr <<"PUB_THIS_FRAME"<<std::endl;
+        std::cerr <<"PUB_THIS_FRAME"<<std::endl;
         //rejectWithF();
         ROS_DEBUG("set mask begins");
         TicToc t_m;
@@ -554,7 +554,23 @@ void FeatureTracker::predictFeatureTracking(
         return;
     }
     compensated_pts.resize(input_pts.size());
+    Eigen::Matrix3d R_p_c_temp;
+    R_p_c_temp <<   R_p_c(0,0), R_p_c(0,1), R_p_c(0,2),
+                    R_p_c(1,0), R_p_c(1,1), R_p_c(1,2), 
+                    R_p_c(2,0), R_p_c(2,1), R_p_c(2,2) ;
 
+    for (unsigned int i = 0; i < input_pts.size(); i++)
+    {
+        Eigen::Vector2d a(input_pts[i].x, input_pts[i].y);
+        Eigen::Vector3d b;
+        Eigen::Vector2d c;
+        m_camera->liftProjective(a, b);
+        b = R_p_c_temp * b;
+        m_camera->spaceToPlane(b, c);
+        compensated_pts[i].x = c[0];
+        compensated_pts[i].y = c[1];
+    }
+    /*
     // Intrinsic matrix.
     cv::Matx33f K(
         intrinsics[0], 0.0, intrinsics[2],
@@ -570,6 +586,7 @@ void FeatureTracker::predictFeatureTracking(
         compensated_pts[i].x = p2[0] / p2[2];
         compensated_pts[i].y = p2[1] / p2[2];
     }
+    */
 
     return;
 }

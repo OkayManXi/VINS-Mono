@@ -23,6 +23,8 @@ std::string IMU_TOPIC;
 double ROW, COL;
 double TD, TR;
 
+std::string DATASET_NAME;
+
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
 {
@@ -58,7 +60,8 @@ void readParameters(ros::NodeHandle &n)
 
     std::string OUTPUT_PATH;
     fsSettings["output_path"] >> OUTPUT_PATH;
-    VINS_RESULT_PATH = OUTPUT_PATH + "/vins_result_no_loop.csv";
+    fsSettings["dataset_name"] >> DATASET_NAME;
+    VINS_RESULT_PATH = OUTPUT_PATH + DATASET_NAME+"vins_result_no_loop.csv";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
 
     // create folder if not exists

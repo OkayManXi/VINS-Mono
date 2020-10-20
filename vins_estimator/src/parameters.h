@@ -38,6 +38,9 @@ extern int ESTIMATE_TD;
 extern int ROLLING_SHUTTER;
 extern double ROW, COL;
 
+extern std::string DATASET_NAME;
+
+
 
 void readParameters(ros::NodeHandle &n);
 

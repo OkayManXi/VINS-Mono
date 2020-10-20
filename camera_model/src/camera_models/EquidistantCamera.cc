@@ -629,7 +629,15 @@ EquidistantCamera::setParameters(const EquidistantCamera::Parameters& parameters
     m_inv_K13 = -mParameters.u0() / mParameters.mu();
     m_inv_K22 = 1.0 / mParameters.mv();
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
+
+    cam_intrinsics = cv::Vec4d(m_inv_K11, m_inv_K13, m_inv_K22, m_inv_K23);
 }
+
+cv::Vec4d EquidistantCamera::get_cam_intrinsics()
+{
+    return cam_intrinsics;
+}
+
 
 void
 EquidistantCamera::readParameters(const std::vector<double>& parameterVec)

@@ -147,9 +147,12 @@ private:
     void backprojectSymmetric(const Eigen::Vector2d& p_u,
                               double& theta, double& phi) const;
 
+    cv::Vec4d get_cam_intrinsics();                      
+
     Parameters mParameters;
 
     double m_inv_K11, m_inv_K13, m_inv_K22, m_inv_K23;
+    cv::Vec4d cam_intrinsics;
 };
 
 typedef boost::shared_ptr<EquidistantCamera> EquidistantCameraPtr;

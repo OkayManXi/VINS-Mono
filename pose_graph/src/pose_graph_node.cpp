@@ -49,6 +49,8 @@ int VISUALIZE_IMU_FORWARD;
 int LOOP_CLOSURE;
 int FAST_RELOCALIZATION;
 
+std::string DATASET_NAME;
+
 camodocal::CameraPtr m_camera;
 Eigen::Vector3d tic;
 Eigen::Matrix3d qic;
@@ -503,7 +505,8 @@ int main(int argc, char **argv)
         VISUALIZE_IMU_FORWARD = fsSettings["visualize_imu_forward"];
         LOAD_PREVIOUS_POSE_GRAPH = fsSettings["load_previous_pose_graph"];
         FAST_RELOCALIZATION = fsSettings["fast_relocalization"];
-        VINS_RESULT_PATH = VINS_RESULT_PATH + "/vins_result_loop.csv";
+        fsSettings["dataset_name"] >> DATASET_NAME;
+        VINS_RESULT_PATH = VINS_RESULT_PATH + DATASET_NAME + "vins_result_loop.csv";
         std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
         fout.close();
         fsSettings.release();
