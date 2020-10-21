@@ -60,37 +60,67 @@ void FeatureTracker::setMask()
     
 
     // prefer to keep features that are tracked for long time
-    vector<pair<int, pair<cv::Point2f, pair<int, cv::Mat>>>>  cnt_pts_id;
+    if (USE_LARVIO)
+    {
+        vector<pair<int, pair<cv::Point2f, pair<int, cv::Mat>>>>  cnt_pts_id;
+        
+        for (unsigned int i = 0; i < forw_pts.size(); i++)
+            cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], make_pair(ids[i], vOrbDescriptors[i]))));
 
-    for (unsigned int i = 0; i < forw_pts.size(); i++)
-        cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], make_pair(ids[i], vOrbDescriptors[i]))));
-
-    sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, pair<int, cv::Mat>>> &a, const pair<int, 
-        pair<cv::Point2f, pair<int, cv::Mat>>> &b)
-         {
-            return a.first > b.first;
-         });
+        sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, pair<int, cv::Mat>>> &a, const pair<int, 
+            pair<cv::Point2f, pair<int, cv::Mat>>> &b)
+            {
+                return a.first > b.first;
+            });
 
 
-    forw_pts.clear();
-    ids.clear();
-    track_cnt.clear();
-    vOrbDescriptors.clear();
-    //vector<cv::Mat> vOrbDescriptors_temp(vOrbDescriptors);
-    //vector<cv::Mat>().swap(vOrbDescriptors);
-    //int vOrbDescriptors_count = 0;
+        forw_pts.clear();
+        ids.clear();
+        track_cnt.clear();
+        vOrbDescriptors.clear();
 
-    for (auto &it : cnt_pts_id)
-    {   
-        if (mask.at<uchar>(it.second.first) == 255)
-        {
-            forw_pts.push_back(it.second.first);
-            ids.push_back(it.second.second.first);
-            track_cnt.push_back(it.first);
-            vOrbDescriptors.push_back(it.second.second.second);
-            cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
+        for (auto &it : cnt_pts_id)
+        {   
+            if (mask.at<uchar>(it.second.first) == 255)
+            {
+                forw_pts.push_back(it.second.first);
+                ids.push_back(it.second.second.first);
+                track_cnt.push_back(it.first);
+                vOrbDescriptors.push_back(it.second.second.second);
+                cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
+            }
         }
     }
+    else
+    {
+        vector<pair<int, pair<cv::Point2f, int>>>  cnt_pts_id;
+        
+        for (unsigned int i = 0; i < forw_pts.size(); i++)
+            cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], ids[i])));
+
+        sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, int>> &a, const pair<int, 
+            pair<cv::Point2f, int>> &b)
+            {
+                return a.first > b.first;
+            });
+
+
+        forw_pts.clear();
+        ids.clear();
+        track_cnt.clear();
+
+        for (auto &it : cnt_pts_id)
+        {   
+            if (mask.at<uchar>(it.second.first) == 255)
+            {
+                forw_pts.push_back(it.second.first);
+                ids.push_back(it.second.second);
+                track_cnt.push_back(it.first);
+                cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
+            }
+        }
+    }
+    
 }
 
 void FeatureTracker::addPoints()
@@ -101,11 +131,14 @@ void FeatureTracker::addPoints()
         ids.push_back(-1);
         track_cnt.push_back(1);
     }
-    vector<int> levels(n_pts.size(), 0);
-    forwORBDescriptor_ptr->computeDescriptors(n_pts, levels, currDescriptors);
-    for (int i=0; i<n_pts.size(); i++)
+    if (USE_LARVIO)
     {
-        vOrbDescriptors.push_back(currDescriptors.row(i));
+        vector<int> levels(n_pts.size(), 0);
+        forwORBDescriptor_ptr->computeDescriptors(n_pts, levels, currDescriptors);
+        for (int i=0; i<n_pts.size(); i++)
+        {
+            vOrbDescriptors.push_back(currDescriptors.row(i));
+    }
     }
     //std::cerr <<"vOrbDescriptors size:"<< vOrbDescriptors.size() << std::endl;
 }
@@ -134,35 +167,41 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         prev_img = img;
         cur_img = img;
         forw_img = img;
-        buildOpticalFlowPyramid(
-        forw_img, forw_pyramid_,
-        cv::Size(PATCH_SIZE, PATCH_SIZE),
-        PYR_LEVELS, true, cv::BORDER_REFLECT_101,
-        cv::BORDER_CONSTANT, false);
-        buildOpticalFlowPyramid(
-        cur_img, curr_pyramid_,
-        cv::Size(PATCH_SIZE, PATCH_SIZE),
-        PYR_LEVELS, true, cv::BORDER_REFLECT_101,
-        cv::BORDER_CONSTANT, false);
-        buildOpticalFlowPyramid(
-        prev_img, prev_pyramid_,
-        cv::Size(PATCH_SIZE, PATCH_SIZE),
-        PYR_LEVELS, true, cv::BORDER_REFLECT_101,
-        cv::BORDER_CONSTANT, false);  
-        prevORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
-        currORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
-        forwORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+        if (USE_LARVIO)
+        {
+            buildOpticalFlowPyramid(
+            forw_img, forw_pyramid_,
+            cv::Size(PATCH_SIZE, PATCH_SIZE),
+            PYR_LEVELS, true, cv::BORDER_REFLECT_101,
+            cv::BORDER_CONSTANT, false);
+            buildOpticalFlowPyramid(
+            cur_img, curr_pyramid_,
+            cv::Size(PATCH_SIZE, PATCH_SIZE),
+            PYR_LEVELS, true, cv::BORDER_REFLECT_101,
+            cv::BORDER_CONSTANT, false);
+            buildOpticalFlowPyramid(
+            prev_img, prev_pyramid_,
+            cv::Size(PATCH_SIZE, PATCH_SIZE),
+            PYR_LEVELS, true, cv::BORDER_REFLECT_101,
+            cv::BORDER_CONSTANT, false);  
+            prevORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+            currORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+            forwORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+        }
     }
     else
     {
 
         forw_img = img;
-        buildOpticalFlowPyramid(
-        forw_img, forw_pyramid_,
-        cv::Size(PATCH_SIZE, PATCH_SIZE),
-        PYR_LEVELS, true, cv::BORDER_REFLECT_101,
-        cv::BORDER_CONSTANT, false);  
-        forwORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+        if (USE_LARVIO)
+        {
+            buildOpticalFlowPyramid(
+            forw_img, forw_pyramid_,
+            cv::Size(PATCH_SIZE, PATCH_SIZE),
+            PYR_LEVELS, true, cv::BORDER_REFLECT_101,
+            cv::BORDER_CONSTANT, false);  
+            forwORBDescriptor_ptr.reset(new ORBdescriptor(forw_pyramid_[0], 2, PYR_LEVELS));
+        }
 
     }
     //将forw_pts清空
@@ -171,133 +210,156 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
     if (cur_pts.size() > 0)
     {
-        int before_tracking;
-        int after_lktrack;
-        int after_rlktrack;
-        int after_destrack;
-        int after_ransac;
 
-        before_tracking = cur_pts.size();
-        //std::cerr <<"before_tracking:"<< before_tracking << std::endl;
-        //计算imu数据
-        TicToc t_i;
-        integrateImuData(R_Prev2Curr, imu_msg_buffer);
-        predictFeatureTracking(cur_pts, R_Prev2Curr, cam_intrinsics, forw_pts);
-        ROS_DEBUG("ImuData integrate and features predict costs: %fms", t_i.toc());
-
-        //光流跟踪
-        TicToc t_o;
-        vector<uchar> status1;
-        vector<float> err1;
-        cv::calcOpticalFlowPyrLK(
-            curr_pyramid_, forw_pyramid_, 
-            cur_pts, forw_pts, 
-            status1, err1, 
-            cv::Size(PATCH_SIZE, PATCH_SIZE), PYR_LEVELS, 
-            cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
-            MAX_ITERATION, TRACK_PRECISION), 
-            cv::OPTFLOW_USE_INITIAL_FLOW);
-        for (int i = 0; i < int(forw_pts.size()); i++)
-            if (status1[i] && !inBorder(forw_pts[i]))
-                status1[i] = 0;
-        reduceVector(prev_pts, status1);
-        reduceVector(cur_pts, status1);
-        reduceVector(forw_pts, status1);
-        reduceVector(ids, status1);
-        reduceVector(cur_un_pts, status1);
-        reduceVector(track_cnt, status1);
-        reduceVector(vOrbDescriptors, status1);
-        after_lktrack = cur_pts.size();
-        //std::cerr <<"after_lktrack:"<< after_lktrack << std::endl;
-        ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
-
-        //反光流
-        TicToc t_f;
-        vector<uchar> status2;
-        vector<float> err2;
-        vector<cv::Point2f> cur_pts_copy(cur_pts);
-        cv::calcOpticalFlowPyrLK(
-            forw_pyramid_, curr_pyramid_, 
-            forw_pts, cur_pts_copy, 
-            status2, err2, 
-            cv::Size(PATCH_SIZE, PATCH_SIZE), PYR_LEVELS, 
-            cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
-            MAX_ITERATION, TRACK_PRECISION), 
-            cv::OPTFLOW_USE_INITIAL_FLOW);
-        for (int i = 0; i < int(cur_pts_copy.size()); i++)
-            if (status2[i] && !inBorder(cur_pts_copy[i]))
-                status2[i] = 0;
-        reduceVector(prev_pts, status2);
-        reduceVector(cur_pts, status2);
-        reduceVector(forw_pts, status2);
-        reduceVector(ids, status2);
-        reduceVector(cur_un_pts, status2);
-        reduceVector(track_cnt, status2);
-        reduceVector(vOrbDescriptors, status2);
-        after_rlktrack = cur_pts.size();
-        //std::cerr <<"after_rlktrack:"<< after_rlktrack << std::endl;
-        ROS_DEBUG("temporal reverse optical flow costs: %fms", t_f.toc());
-
-        //ORB描述符
-        TicToc t_orb;
-        vector<int> levels(cur_pts.size(), 0);
-        if (!forwORBDescriptor_ptr->computeDescriptors(forw_pts, levels, forwDescriptors)) 
+        if (USE_LARVIO)
         {
-            cerr << "error happen while compute descriptors" << endl;
-            vector<cv::Point2f>().swap(cur_pts);
-            vector<cv::Point2f>().swap(prev_pts);
-            vector<cv::Point2f>().swap(forw_pts);
-            vector<cv::Point2f>().swap(cur_un_pts);
-            vector<int>().swap(ids);
-            vector<int>().swap(track_cnt);
-            vector<cv::Mat>().swap(vOrbDescriptors);
-            return;
-        }
-        //forwDescriptors第j行对应第j个特征点，vOrbDescriptors的第j个向量（类型为mat）对应第j
-        vector<int> vDis;
-        for (int j = 0; j < forwDescriptors.rows; ++j) 
-        {
-            int dis = ORBdescriptor::computeDescriptorDistance(
-                    vOrbDescriptors.at(j), forwDescriptors.row(j));
-            //std::cerr << dis <<" ";
-            vDis.push_back(dis);
-        }
-        //std::cerr << std::endl;
-        //通过描述符距离判断是否局内点
-        vector<unsigned char> status3(vOrbDescriptors.size(), 0);
-        for (int i = 0; i < vOrbDescriptors.size(); i++) 
-        {
-            if (vDis[i]<=58)  
-                status3[i] = 1;
-        }
-        reduceVector(prev_pts, status3);
-        reduceVector(cur_pts, status3);
-        reduceVector(forw_pts, status3);
-        reduceVector(ids, status3);
-        reduceVector(cur_un_pts, status3);
-        reduceVector(track_cnt, status3);
-        reduceVector(vOrbDescriptors, status3);
-        after_destrack = cur_pts.size();
-        //std::cerr <<"after_destrack:"<< after_destrack << std::endl;
-        ROS_DEBUG("ORB Descriptors costs: %fms", t_orb.toc());
+            int before_tracking;
+            int after_lktrack;
+            int after_rlktrack;
+            int after_destrack;
+            int after_ransac;
 
-        //RANSAC
-        rejectWithF();
-        after_ransac = cur_pts.size();
-        //std::cerr <<"after_ransac:"<< after_ransac << std::endl;
+            before_tracking = cur_pts.size();
+            //std::cerr <<"before_tracking:"<< before_tracking << std::endl;
+            //计算imu数据
+            TicToc t_i;
+            integrateImuData(R_Prev2Curr, imu_msg_buffer);
+            predictFeatureTracking(cur_pts, R_Prev2Curr, cam_intrinsics, forw_pts);
+            ROS_DEBUG("ImuData integrate and features predict costs: %fms", t_i.toc());
 
-        if(SHOW_FEATURE_TRACK)
-        {
-            std::ofstream outfile(("/home/zty/myGit/VINS-Mono/src/VINS-Mono/results/"+DATASET_NAME+".txt"),std::ios::app);
-            outfile <<std::fixed<< std::setprecision(13) 
-                << cur_time <<" "
-                << before_tracking <<" "
-                << after_lktrack <<" "
-                << after_rlktrack <<" "
-                << after_destrack <<" "
-                << after_ransac <<std::endl;
-            outfile.close();
+            //光流跟踪
+            TicToc t_o;
+            vector<uchar> status1;
+            vector<float> err1;
+            cv::calcOpticalFlowPyrLK(
+                curr_pyramid_, forw_pyramid_, 
+                cur_pts, forw_pts, 
+                status1, err1, 
+                cv::Size(PATCH_SIZE, PATCH_SIZE), PYR_LEVELS, 
+                cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
+                MAX_ITERATION, TRACK_PRECISION), 
+                cv::OPTFLOW_USE_INITIAL_FLOW);
+            for (int i = 0; i < int(forw_pts.size()); i++)
+                if (status1[i] && !inBorder(forw_pts[i]))
+                    status1[i] = 0;
+            reduceVector(prev_pts, status1);
+            reduceVector(cur_pts, status1);
+            reduceVector(forw_pts, status1);
+            reduceVector(ids, status1);
+            reduceVector(cur_un_pts, status1);
+            reduceVector(track_cnt, status1);
+            reduceVector(vOrbDescriptors, status1);
+            after_lktrack = cur_pts.size();
+            //std::cerr <<"after_lktrack:"<< after_lktrack << std::endl;
+            ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
+
+            //反光流
+            TicToc t_f;
+            vector<uchar> status2;
+            vector<float> err2;
+            vector<cv::Point2f> cur_pts_copy(cur_pts);
+            cv::calcOpticalFlowPyrLK(
+                forw_pyramid_, curr_pyramid_, 
+                forw_pts, cur_pts_copy, 
+                status2, err2, 
+                cv::Size(PATCH_SIZE, PATCH_SIZE), PYR_LEVELS, 
+                cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
+                MAX_ITERATION, TRACK_PRECISION), 
+                cv::OPTFLOW_USE_INITIAL_FLOW);
+            for (int i = 0; i < int(cur_pts_copy.size()); i++)
+                if (status2[i] && !inBorder(cur_pts_copy[i]))
+                    status2[i] = 0;
+            reduceVector(prev_pts, status2);
+            reduceVector(cur_pts, status2);
+            reduceVector(forw_pts, status2);
+            reduceVector(ids, status2);
+            reduceVector(cur_un_pts, status2);
+            reduceVector(track_cnt, status2);
+            reduceVector(vOrbDescriptors, status2);
+            after_rlktrack = cur_pts.size();
+            //std::cerr <<"after_rlktrack:"<< after_rlktrack << std::endl;
+            ROS_DEBUG("temporal reverse optical flow costs: %fms", t_f.toc());
+
+            //ORB描述符
+            TicToc t_orb;
+            vector<int> levels(cur_pts.size(), 0);
+            if (!forwORBDescriptor_ptr->computeDescriptors(forw_pts, levels, forwDescriptors)) 
+            {
+                cerr << "error happen while compute descriptors" << endl;
+                vector<cv::Point2f>().swap(cur_pts);
+                vector<cv::Point2f>().swap(prev_pts);
+                vector<cv::Point2f>().swap(forw_pts);
+                vector<cv::Point2f>().swap(cur_un_pts);
+                vector<int>().swap(ids);
+                vector<int>().swap(track_cnt);
+                vector<cv::Mat>().swap(vOrbDescriptors);
+                return;
+            }
+            //forwDescriptors第j行对应第j个特征点，vOrbDescriptors的第j个向量（类型为mat）对应第j
+            vector<int> vDis;
+            for (int j = 0; j < forwDescriptors.rows; ++j) 
+            {
+                int dis = ORBdescriptor::computeDescriptorDistance(
+                        vOrbDescriptors.at(j), forwDescriptors.row(j));
+                //std::cerr << dis <<" ";
+                vDis.push_back(dis);
+            }
+            //std::cerr << std::endl;
+            //通过描述符距离判断是否局内点
+            vector<unsigned char> status3(vOrbDescriptors.size(), 0);
+            for (int i = 0; i < vOrbDescriptors.size(); i++) 
+            {
+                if (vDis[i]<=58)  
+                    status3[i] = 1;
+            }
+            reduceVector(prev_pts, status3);
+            reduceVector(cur_pts, status3);
+            reduceVector(forw_pts, status3);
+            reduceVector(ids, status3);
+            reduceVector(cur_un_pts, status3);
+            reduceVector(track_cnt, status3);
+            reduceVector(vOrbDescriptors, status3);
+            after_destrack = cur_pts.size();
+            //std::cerr <<"after_destrack:"<< after_destrack << std::endl;
+            ROS_DEBUG("ORB Descriptors costs: %fms", t_orb.toc());
+
+            //RANSAC
+            rejectWithF();
+            after_ransac = cur_pts.size();
+            //std::cerr <<"after_ransac:"<< after_ransac << std::endl;
+
+            if(SHOW_FEATURE_TRACK)
+            {
+                std::ofstream outfile(("/home/zty/myGit/VINS-Mono/src/VINS-Mono/results/"+DATASET_NAME+".txt"),std::ios::app);
+                outfile <<std::fixed<< std::setprecision(13) 
+                    << cur_time <<" "
+                    << before_tracking <<" "
+                    << after_lktrack <<" "
+                    << after_rlktrack <<" "
+                    << after_destrack <<" "
+                    << after_ransac <<std::endl;
+                outfile.close();
+            }
         }
+        else
+        {
+            TicToc t_o;
+            vector<uchar> status;
+            vector<float> err;
+            cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
+
+            for (int i = 0; i < int(forw_pts.size()); i++)
+                if (status[i] && !inBorder(forw_pts[i]))
+                    status[i] = 0;
+            reduceVector(prev_pts, status);
+            reduceVector(cur_pts, status);
+            reduceVector(forw_pts, status);
+            reduceVector(ids, status);
+            reduceVector(cur_un_pts, status);
+            reduceVector(track_cnt, status);
+            ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
+        }
+        
 
 
 
@@ -308,8 +370,10 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
     if (PUB_THIS_FRAME)
     {
+        if(!USE_LARVIO)
+            rejectWithF();
         countdebug = 1;
-        std::cerr <<"PUB_THIS_FRAME"<<std::endl;
+        //std::cerr <<"PUB_THIS_FRAME"<<std::endl;
         //rejectWithF();
         ROS_DEBUG("set mask begins");
         TicToc t_m;
@@ -348,10 +412,13 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     undistortedPoints();
     prev_time = cur_time;
     //描述符交换
+    if (USE_LARVIO)
+    {
     prevORBDescriptor_ptr = currORBDescriptor_ptr;
     currORBDescriptor_ptr = prevORBDescriptor_ptr;
     prev_pyramid_.swap(curr_pyramid_);
     curr_pyramid_.swap(forw_pyramid_);
+    }
 
 }
 
@@ -570,23 +637,6 @@ void FeatureTracker::predictFeatureTracking(
         compensated_pts[i].x = c[0];
         compensated_pts[i].y = c[1];
     }
-    /*
-    // Intrinsic matrix.
-    cv::Matx33f K(
-        intrinsics[0], 0.0, intrinsics[2],
-        0.0, intrinsics[1], intrinsics[3],
-        0.0, 0.0, 1.0);
-    //将上一帧中的特这点坐标通过相机内参和相机旋转矩阵映射到当前帧中（像素坐标）
-    cv::Matx33f H = K * R_p_c * K.inv();  
-
-    for (int i = 0; i < input_pts.size(); ++i) {
-        //补成齐次坐标
-        cv::Vec3f p1(input_pts[i].x, input_pts[i].y, 1.0f);
-        cv::Vec3f p2 = H * p1;
-        compensated_pts[i].x = p2[0] / p2[2];
-        compensated_pts[i].y = p2[1] / p2[2];
-    }
-    */
 
     return;
 }

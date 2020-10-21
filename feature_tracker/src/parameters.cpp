@@ -25,8 +25,10 @@ int PYR_LEVELS;
 int PATCH_SIZE;
 int MAX_ITERATION;
 int TRACK_PRECISION;
-int SHOW_FEATURE_TRACK;
 std::string DATASET_NAME;
+
+int USE_LARVIO;
+int SHOW_FEATURE_TRACK;
 
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
@@ -76,47 +78,7 @@ void readParameters(ros::NodeHandle &n)
     PUB_THIS_FRAME = false;
 
     //新增的参数
-    /*
-    cv::FileNode x;
-    if (fsSettings["model_type"] == "PINHOLE")
-    {
-        x = fsSettings["projection_parameters"];
-        cam_intrinsics(0) = static_cast<double>(x["fx"]);
-        cam_intrinsics(1) = static_cast<double>(x["fy"]);
-        cam_intrinsics(2) = static_cast<double>(x["cx"]);
-        cam_intrinsics(3) = static_cast<double>(x["cy"]);
-    }
-    else if (fsSettings["model_type"] == "KANNALA_BRANDT")
-    {
-        x = fsSettings["projection_parameters"];
-        double k2, k3, k4, k5, mu, mv, u0, v0;
-        k2 = static_cast<double>(x["k2"]);
-        k3 = static_cast<double>(x["k3"]);
-        k4 = static_cast<double>(x["k4"]);
-        k5 = static_cast<double>(x["k5"]);
-        mv = static_cast<double>(x["mv"]);
-        mu = static_cast<double>(x["mu"]);
-        u0 = static_cast<double>(x["u0"]);
-        v0 = static_cast<double>(x["v0"]);
-
-        cam_intrinsics(0) = 1.0 / mu;
-        cam_intrinsics(1) = -u0 / mu;
-        cam_intrinsics(2) = 1.0 / mv;
-        cam_intrinsics(3) = -v0 / mv;
-
-    }
-
-    
-
-    x = fsSettings["distortion_parameters"];
-    cam_distortion(0) = static_cast<double>(x["k1"]);
-    cam_distortion(1) = static_cast<double>(x["k2"]);
-    cam_distortion(2) = static_cast<double>(x["p1"]);
-    cam_distortion(3) = static_cast<double>(x["p1"]);
-    */
-
     cv::Mat temp;
-    //cv::Matx33d R_imu_cam;
     fsSettings["extrinsicRotation"] >> temp;
     R_cam_imu = temp;
 
@@ -126,6 +88,8 @@ void readParameters(ros::NodeHandle &n)
     TRACK_PRECISION = fsSettings["track_precision"];
     SHOW_FEATURE_TRACK = fsSettings["show_feature_track"];
     fsSettings["dataset_name"] >> DATASET_NAME;
+    USE_LARVIO = fsSettings["use_larvio"];
+
     if (FREQ == 0)
         FREQ = 100;
 

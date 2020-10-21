@@ -5,6 +5,15 @@ imu_topic: "/imu0"
 image_topic: "/cam0/image_raw"
 output_path: "/home/zty/myGit/VINS-Mono/src/VINS-Mono/results/"
 
+#add parameters
+pyr_levels: 3
+patch_size: 21
+max_iteration: 30
+track_precision: 0.01
+show_feature_track: 1
+dataset_name: "MH02"
+use_larvio: 0
+
 #camera calibration 
 model_type: PINHOLE
 camera_name: camera
@@ -49,12 +58,7 @@ F_threshold: 1.0        # ransac threshold (pixel)
 show_track: 1           # publish tracking image as topic
 equalize: 1             # if image is too dark or light, trun on equalize to find enough features
 fisheye: 0              # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
-pyr_levels: 3
-patch_size: 21
-max_iteration: 30
-track_precision: 0.01
-show_feature_track: 1
-dataset_name: "MH02"
+
 
 #optimization parameters
 max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time

@@ -30,7 +30,9 @@ extern int PYR_LEVELS;
 extern int PATCH_SIZE;
 extern int MAX_ITERATION;
 extern int TRACK_PRECISION;
-extern int SHOW_FEATURE_TRACK;
 extern std::string DATASET_NAME;
+
+extern int SHOW_FEATURE_TRACK;
+extern int USE_LARVIO;
 
 void readParameters(ros::NodeHandle &n);

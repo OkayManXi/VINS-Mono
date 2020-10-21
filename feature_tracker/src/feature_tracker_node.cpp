@@ -243,7 +243,10 @@ int main(int argc, char **argv)
                 ROS_INFO("load mask success");
         }
     }
-    ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 5000, imucallback);
+    if (USE_LARVIO)
+    {
+        ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 5000, imucallback);
+    }
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
 
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
