@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ctime>
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
+#include <ctime>
 
 class TicToc
 {

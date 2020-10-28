@@ -1,17 +1,17 @@
 #ifndef FEATURE_MANAGER_H
 #define FEATURE_MANAGER_H
 
-#include <list>
 #include <algorithm>
-#include <vector>
+#include <list>
 #include <numeric>
+#include <vector>
 using namespace std;
 
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 
-#include <ros/console.h>
 #include <ros/assert.h>
+#include <ros/console.h>
 
 #include "parameters.h"
 
@@ -25,8 +25,8 @@ class FeaturePerFrame
         point.z() = _point(2);
         uv.x() = _point(3);
         uv.y() = _point(4);
-        velocity.x() = _point(5); 
-        velocity.y() = _point(6); 
+        velocity.x() = _point(5);
+        velocity.y() = _point(6);
         cur_td = td;
     }
     double cur_td;
@@ -52,13 +52,12 @@ class FeaturePerId
     bool is_outlier;
     bool is_margin;
     double estimated_depth;
-    int solve_flag; // 0 haven't solve yet; 1 solve succ; 2 solve fail;
+    int solve_flag;  // 0 haven't solve yet; 1 solve succ; 2 solve fail;
 
     Vector3d gt_p;
 
     FeaturePerId(int _feature_id, int _start_frame)
-        : feature_id(_feature_id), start_frame(_start_frame),
-          used_num(0), estimated_depth(-1.0), solve_flag(0)
+        : feature_id(_feature_id), start_frame(_start_frame), used_num(0), estimated_depth(-1.0), solve_flag(0)
     {
     }
 
@@ -80,7 +79,7 @@ class FeatureManager
     void debugShow();
     vector<pair<Vector3d, Vector3d>> getCorresponding(int frame_count_l, int frame_count_r);
 
-    //void updateDepth(const VectorXd &x);
+    // void updateDepth(const VectorXd &x);
     void setDepth(const VectorXd &x);
     void removeFailures();
     void clearDepth(const VectorXd &x);

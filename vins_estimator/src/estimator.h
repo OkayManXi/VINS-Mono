@@ -1,27 +1,26 @@
 #pragma once
 
-#include "parameters.h"
 #include "feature_manager.h"
-#include "utility/utility.h"
-#include "utility/tic_toc.h"
-#include "initial/solve_5pts.h"
-#include "initial/initial_sfm.h"
 #include "initial/initial_alignment.h"
 #include "initial/initial_ex_rotation.h"
-#include <std_msgs/Header.h>
+#include "initial/initial_sfm.h"
+#include "initial/solve_5pts.h"
+#include "parameters.h"
+#include "utility/tic_toc.h"
+#include "utility/utility.h"
 #include <std_msgs/Float32.h>
+#include <std_msgs/Header.h>
 
-#include <ceres/ceres.h>
 #include "factor/imu_factor.h"
+#include "factor/marginalization_factor.h"
 #include "factor/pose_local_parameterization.h"
 #include "factor/projection_factor.h"
 #include "factor/projection_td_factor.h"
-#include "factor/marginalization_factor.h"
+#include <ceres/ceres.h>
 
-#include <unordered_map>
-#include <queue>
 #include <opencv2/core/eigen.hpp>
-
+#include <queue>
+#include <unordered_map>
 
 class Estimator
 {
@@ -49,7 +48,6 @@ class Estimator
     void double2vector();
     bool failureDetection();
 
-
     enum SolverFlag
     {
         INITIAL,
@@ -63,7 +61,7 @@ class Estimator
     };
 
     SolverFlag solver_flag;
-    MarginalizationFlag  marginalization_flag;
+    MarginalizationFlag marginalization_flag;
     Vector3d g;
     MatrixXd Ap[2], backup_A;
     VectorXd bp[2], backup_b;
@@ -105,7 +103,6 @@ class Estimator
     vector<Vector3d> key_poses;
     double initial_timestamp;
 
-
     double para_Pose[WINDOW_SIZE + 1][SIZE_POSE];
     double para_SpeedBias[WINDOW_SIZE + 1][SIZE_SPEEDBIAS];
     double para_Feature[NUM_OF_F][SIZE_FEATURE];
@@ -122,7 +119,7 @@ class Estimator
     map<double, ImageFrame> all_image_frame;
     IntegrationBase *tmp_pre_integration;
 
-    //relocalization variable
+    // relocalization variable
     bool relocalization_info;
     double relo_frame_stamp;
     double relo_frame_index;

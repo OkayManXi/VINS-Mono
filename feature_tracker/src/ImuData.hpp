@@ -3,20 +3,19 @@
  * @Author: Xiaochen Qiu
  */
 
-
 #ifndef IMU_DATA_HPP
 #define IMU_DATA_HPP
-
 
 #include "Eigen/Core"
 #include "Eigen/Dense"
 
-
-struct ImuData {
+struct ImuData
+{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    ImuData (double t, double wx, double wy, double wz, 
-            double ax, double ay, double az) {
+    ImuData(double t, double wx, double wy, double wz, double ax, double ay,
+            double az)
+    {
         timeStampToSec = t;
         angular_velocity[0] = wx;
         angular_velocity[1] = wy;
@@ -26,7 +25,8 @@ struct ImuData {
         linear_acceleration[2] = az;
     }
 
-    ImuData (double t, const Eigen::Vector3d& omg, const Eigen::Vector3d& acc) {
+    ImuData(double t, const Eigen::Vector3d &omg, const Eigen::Vector3d &acc)
+    {
         timeStampToSec = t;
         angular_velocity = omg;
         linear_acceleration = acc;
@@ -37,6 +37,4 @@ struct ImuData {
     Eigen::Vector3d linear_acceleration;
 };
 
-
-
-#endif // IMU_DATA_HPP
+#endif  // IMU_DATA_HPP

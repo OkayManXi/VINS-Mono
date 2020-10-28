@@ -13,28 +13,30 @@
 
 using namespace std;
 
-
-class ORBdescriptor     // this class is created by QXC based on ORB_SLAM2::ORBextractor
+class ORBdescriptor  // this class is created by QXC based on
+                     // ORB_SLAM2::ORBextractor
 {
-public:
+  public:
+    ORBdescriptor(const cv::Mat &_image, float _scaleFactor, int _nlevels,
+                  int _edgeThreshold = 31, int _patchSize = 31);
 
-    ORBdescriptor(const cv::Mat& _image, float _scaleFactor, int _nlevels,
-                  int _edgeThreshold=31, int _patchSize=31);
-
-    ~ORBdescriptor(){}
+    ~ORBdescriptor()
+    {
+    }
 
     // modified based on ORBextractor::computeDescriptors by QXC
     // @INPUTs:
-    //      @pts: cv::Point object of key points in source image, i.e. image at level 0
+    //      @pts: cv::Point object of key points in source image, i.e. image at
+    //      level 0
     //      @levels: level of @image in pyramid
     // @OUTPUTs
-    //      @descriptors: each row store the descriptor of corresponding key point
+    //      @descriptors: each row store the descriptor of corresponding key
+    //      point
     // @BRIEF:
     //      This function calculate the descriptors of keypoints of same level.
     //      Should be called after calling function initializeLayerAndPyramid().
-    bool computeDescriptors(const vector<cv::Point2f>& pts,
-                            const vector<int>& levels,
-                            cv::Mat& descriptors);
+    bool computeDescriptors(const vector<cv::Point2f> &pts,
+                            const vector<int> &levels, cv::Mat &descriptors);
 
     // copy from ORBmatcher.cc, below is original comment
     // Bit set count operation from
@@ -44,11 +46,11 @@ public:
         const int *pa = a.ptr<int32_t>();
         const int *pb = b.ptr<int32_t>();
 
-        int dist=0;
+        int dist = 0;
 
-        for(int i=0; i<8; i++, pa++, pb++)
+        for (int i = 0; i < 8; i++, pa++, pb++)
         {
-            unsigned int v = *pa ^ *pb;		
+            unsigned int v = *pa ^ *pb;
             v = v - ((v >> 1) & 0x55555555);
             v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
             dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
@@ -59,11 +61,12 @@ public:
 
     static const float factorPI;
 
-    static const int TH_HIGH;   // threshold for worst descriptor distance in all levels
-    static const int TH_LOW;    // threshold for best descriptor distance in all levels
+    static const int
+        TH_HIGH;  // threshold for worst descriptor distance in all levels
+    static const int
+        TH_LOW;  // threshold for best descriptor distance in all levels
 
-private:
-
+  private:
     static const int HARRIS_BLOCK_SIZE;
 
     int patchSize;
@@ -83,23 +86,19 @@ private:
     cv::Mat mImagePyramid;
     cv::Mat mBluredImagePyramid;
 
-private:
-// compute descriptor of a key point and save it into @desc
-    void computeOrbDescriptor(const cv::KeyPoint& kpt,
-                              uchar* desc);
+  private:
+    // compute descriptor of a key point and save it into @desc
+    void computeOrbDescriptor(const cv::KeyPoint &kpt, uchar *desc);
 
     // copy from opencv/orb.cpp
-    void makeRandomPattern(int patchSize, cv::Point* pattern_, int npoints);
+    void makeRandomPattern(int patchSize, cv::Point *pattern_, int npoints);
 
     // initialize layer information and image of pyramid
-    void initializeLayerAndPyramid(const cv::Mat& image);
+    void initializeLayerAndPyramid(const cv::Mat &image);
 
-public:
+  public:
     // calculate Angle for an ordinary point
-    float IC_Angle(const int& levels, const cv::Point2f& pt);
+    float IC_Angle(const int &levels, const cv::Point2f &pt);
 };
 
-
-
-
-#endif //LKTTRACKER_ORBDESCRIPTOR_H
+#endif  // LKTTRACKER_ORBDESCRIPTOR_H
