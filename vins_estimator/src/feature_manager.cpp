@@ -53,7 +53,7 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
 
         int feature_id = id_pts.first;
         auto it = find_if(feature.begin(), feature.end(), [feature_id](const FeaturePerId &it) { return it.feature_id == feature_id; });
-
+        // not find it.feature_id in list feature, init new and push back in list feature
         if (it == feature.end())
         {
             feature.push_back(FeaturePerId(feature_id, frame_count));
@@ -66,13 +66,18 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
         }
     }
 
+    // if less than 2 or feature track nums less than 20,because initial
     if (frame_count < 2 || last_track_num < 20)
         return true;
 
+    // if frame_count more than 2 and track nums more than 20,we should judge
     for (auto &it_per_id : feature)
     {
+        // judge whether this feature exist enough time and whether exist now
         if (it_per_id.start_frame <= frame_count - 2 && it_per_id.start_frame + int(it_per_id.feature_per_frame.size()) - 1 >= frame_count - 1)
         {
+            // key frame judging by calculate feature points location move
+            // parallax_sum is the total location shift of the newest frame's features
             parallax_sum += compensatedParallax2(it_per_id, frame_count);
             parallax_num++;
         }
@@ -114,8 +119,10 @@ void FeatureManager::debugShow()
 vector<pair<Vector3d, Vector3d>> FeatureManager::getCorresponding(int frame_count_l, int frame_count_r)
 {
     vector<pair<Vector3d, Vector3d>> corres;
+    // go through all different feature points we have,and choose points these existing between frame_l and frame_r
     for (auto &it : feature)
     {
+        // judge whether frame_count_l and frame_count_r exist
         if (it.start_frame <= frame_count_l && it.endFrame() >= frame_count_r)
         {
             Vector3d a = Vector3d::Zero(), b = Vector3d::Zero();
@@ -192,6 +199,7 @@ VectorXd FeatureManager::getDepthVector()
     return dep_vec;
 }
 
+//三角测量
 void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
 {
     for (auto &it_per_id : feature)
@@ -214,6 +222,7 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
         P0.leftCols<3>() = Eigen::Matrix3d::Identity();
         P0.rightCols<1>() = Eigen::Vector3d::Zero();
 
+        // 对svd的A原始矩阵赋值，每两行一个观测，第一行为x，第二行为y
         for (auto &it_per_frame : it_per_id.feature_per_frame)
         {
             imu_j++;
@@ -232,6 +241,8 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
             if (imu_i == imu_j)
                 continue;
         }
+        // A×V=U×sigma（奇异值矩阵），同样有A×【x，y，z，1】（列向量）=0，于是V最后加入一列【xyz1】，U加入一列0，因此svd分解后的V矩阵最后一列就是【xyz1】，depth=svd_V[2]
+        // svd_V[3]（假设svd_V[3]不一定是1）
         ROS_ASSERT(svd_idx == svd_A.rows());
         Eigen::Vector4d svd_V = Eigen::JacobiSVD<Eigen::MatrixXd>(svd_A, Eigen::ComputeThinV).matrixV().rightCols<1>();
         double svd_method = svd_V[2] / svd_V[3];
@@ -269,6 +280,8 @@ void FeatureManager::removeBackShiftDepth(Eigen::Matrix3d marg_R, Eigen::Vector3
     {
         it_next++;
 
+        //修改起始帧数，如果start_frame不是滑窗边缘化去除的那一帧，那么start_frame-1
+        //如果start_frame=0，也就是边缘化去除的那一帧是起始帧，
         if (it->start_frame != 0)
             it->start_frame--;
         else
@@ -282,6 +295,7 @@ void FeatureManager::removeBackShiftDepth(Eigen::Matrix3d marg_R, Eigen::Vector3
             }
             else
             {
+                // TODO slideold 看不懂
                 Eigen::Vector3d pts_i = uv_i * it->estimated_depth;
                 Eigen::Vector3d w_pts_i = marg_R * pts_i + marg_P;
                 Eigen::Vector3d pts_j = new_R.transpose() * (w_pts_i - new_P);
@@ -325,6 +339,10 @@ void FeatureManager::removeFront(int frame_count)
     {
         it_next++;
 
+        // 如果起始帧是滑窗中的第11帧，那么删除第10帧，则会将起始帧从第11帧修改成第10帧
+        // 如果起始帧是滑窗中的第9帧（或之前），那么不影响continue进入下个循环
+        // 如果起始帧是滑窗中的第10帧，也就是滑窗正好要丢掉的一帧，则j=0，则删除掉起始帧那一帧
+        // 如果删除掉起始帧后，角点追踪的帧数为0，那就删除这个角点
         if (it->start_frame == frame_count)
         {
             it->start_frame--;
@@ -373,5 +391,6 @@ double FeatureManager::compensatedParallax2(const FeaturePerId &it_per_id, int f
 
     ans = max(ans, sqrt(min(du * du + dv * dv, du_comp * du_comp + dv_comp * dv_comp)));
 
+    // because p_i_comp = p_i,so du = du_comp,so ans= sqrt(du*du+dv*dv)
     return ans;
 }

@@ -2,6 +2,7 @@
 
 bool PoseLocalParameterization::Plus(const double *x, const double *delta, double *x_plus_delta) const
 {
+    // define pose(q:wxyz.p:xyz) 7 parameters plus
     Eigen::Map<const Eigen::Vector3d> _p(x);
     Eigen::Map<const Eigen::Quaterniond> _q(x + 3);
 
@@ -19,6 +20,7 @@ bool PoseLocalParameterization::Plus(const double *x, const double *delta, doubl
 }
 bool PoseLocalParameterization::ComputeJacobian(const double *x, double *jacobian) const
 {
+    // force q:w row's jacobian =0,means always w = 1
     Eigen::Map<Eigen::Matrix<double, 7, 6, Eigen::RowMajor>> j(jacobian);
     j.topRows<6>().setIdentity();
     j.bottomRows<1>().setZero();

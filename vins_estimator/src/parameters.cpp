@@ -25,8 +25,7 @@ double TD, TR;
 
 std::string DATASET_NAME;
 
-template <typename T>
-T readParam(ros::NodeHandle &n, std::string name)
+template <typename T> T readParam(ros::NodeHandle &n, std::string name)
 {
     T ans;
     if (n.getParam(name, ans))
@@ -46,7 +45,7 @@ void readParameters(ros::NodeHandle &n)
     std::string config_file;
     config_file = readParam<std::string>(n, "config_file");
     cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
+    if (!fsSettings.isOpened())
     {
         std::cerr << "ERROR: Wrong path to settings" << std::endl;
     }
@@ -61,7 +60,7 @@ void readParameters(ros::NodeHandle &n)
     std::string OUTPUT_PATH;
     fsSettings["output_path"] >> OUTPUT_PATH;
     fsSettings["dataset_name"] >> DATASET_NAME;
-    VINS_RESULT_PATH = OUTPUT_PATH + DATASET_NAME+"vins_result_no_loop.csv";
+    VINS_RESULT_PATH = OUTPUT_PATH + DATASET_NAME + "vins_result_no_loop.csv";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
 
     // create folder if not exists
@@ -86,11 +85,10 @@ void readParameters(ros::NodeHandle &n)
         RIC.push_back(Eigen::Matrix3d::Identity());
         TIC.push_back(Eigen::Vector3d::Zero());
         EX_CALIB_RESULT_PATH = OUTPUT_PATH + "/extrinsic_parameter.csv";
-
     }
-    else 
+    else
     {
-        if ( ESTIMATE_EXTRINSIC == 1)
+        if (ESTIMATE_EXTRINSIC == 1)
         {
             ROS_WARN(" Optimize extrinsic param around initial guess!");
             EX_CALIB_RESULT_PATH = OUTPUT_PATH + "/extrinsic_parameter.csv";
@@ -111,8 +109,7 @@ void readParameters(ros::NodeHandle &n)
         TIC.push_back(eigen_T);
         ROS_INFO_STREAM("Extrinsic_R : " << std::endl << RIC[0]);
         ROS_INFO_STREAM("Extrinsic_T : " << std::endl << TIC[0].transpose());
-        
-    } 
+    }
 
     INIT_DEPTH = 5.0;
     BIAS_ACC_THRESHOLD = 0.1;
@@ -135,6 +132,6 @@ void readParameters(ros::NodeHandle &n)
     {
         TR = 0;
     }
-    
+
     fsSettings.release();
 }

@@ -117,6 +117,7 @@ void Estimator::processIMU(double dt, const Vector3d &linear_acceleration, const
     gyr_0 = angular_velocity;
 }
 
+// image feature id,camera id,feature points location
 void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, const std_msgs::Header &header)
 {
     ROS_DEBUG("new image coming ------------------------------------------");
@@ -649,8 +650,8 @@ void Estimator::optimization()
     for (int i = 0; i < WINDOW_SIZE + 1; i++)
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
-        problem.AddParameterBlock(para_Pose[i], SIZE_POSE, local_parameterization);
-        problem.AddParameterBlock(para_SpeedBias[i], SIZE_SPEEDBIAS);
+        problem.AddParameterBlock(para_Pose[i], SIZE_POSE, local_parameterization);  // q:wxyz,p:xyz
+        problem.AddParameterBlock(para_SpeedBias[i], SIZE_SPEEDBIAS);                // v:xyz,bg:xyz,ba:xyz
     }
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
@@ -658,6 +659,7 @@ void Estimator::optimization()
         problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
         if (!ESTIMATE_EXTRINSIC)
         {
+            // ESTIMATE_EXTRINSIC=0,fix camera K and D
             ROS_DEBUG("fix extinsic param");
             problem.SetParameterBlockConstant(para_Ex_Pose[i]);
         }
@@ -794,6 +796,8 @@ void Estimator::optimization()
 
     double2vector();
 
+    // 边缘化优化
+    // TODO 边缘优化看不懂
     TicToc t_whole_marginalization;
     if (marginalization_flag == MARGIN_OLD)
     {
@@ -1079,6 +1083,7 @@ void Estimator::slideWindowOld()
     bool shift_depth = solver_flag == NON_LINEAR ? true : false;
     if (shift_depth)
     {
+        // R0 边缘化后去掉的 R1边缘化后滑窗中的第一帧
         Matrix3d R0, R1;
         Vector3d P0, P1;
         R0 = back_R0 * ric[0];
